@@ -1,0 +1,16 @@
+body {
+  background-color: #ffe7be;
+}
+
+h2 {
+  text-align: center;
+}
+
+img {
+  margin: 5px auto;
+}
+
+div.container {
+  width: 1000px;
+  background-color: #cce7be;
+}
