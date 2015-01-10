@@ -7,61 +7,61 @@
  <meta http-equiv="Pragma" content="no-cache">
  <meta http-equiv="Cache-Control" content="no-cache">
  <link rel="stylesheet" type="text/css" href="/parnik/style.css">
- <title>Parnik</title>
+ <title>Парник</title>
 </head>
 <body>
- <h2>Parnik</h2>
+ <h2>Парник</h2>
  <div class="container">
  <RRD::GRAPH /var/www/html/parnik/img/temp-<RRD::CV scale>.gif 
   --start -<RRD::CV start> -l 0
   --imginfo '<IMG SRC=/parnik/img/%s WIDTH=%lu HEIGHT=%lu >'
-  --width 600 --height 400 --title "Temperatures" 
-  --vertical-label "Celsius Centigrades" 
+  --width 600 --height 400 --title "Температуры" 
+  --vertical-label "Градусы" 
   DEF:temp1=/var/lib/rrd/parnik/temp.rrd:temp1:AVERAGE
   DEF:temp2=/var/lib/rrd/1-wire/home/weather.rrd:temp:AVERAGE
   DEF:high=/var/lib/rrd/parnik/temp.rrd:high:AVERAGE
   DEF:low=/var/lib/rrd/parnik/temp.rrd:low:AVERAGE
-  LINE2:temp1#FF0000:"Inside temp"
-  LINE2:temp2#009000:"Outside temp"
-  LINE1:high#FF0000:"High level"
-  LINE1:low#0000FF:"Low level"
+  LINE2:temp1#FF0000:"Темпрература воздуха внутри"
+  LINE2:temp2#009000:"Температура снаружи"
+  LINE1:high#FF0000:"Порог включения вентиляторов"
+  LINE1:low#0000FF:"Порог выключения"
  >
 
  <RRD::GRAPH /var/www/html/parnik/img/fans-<RRD::CV scale>.gif 
   --start -<RRD::CV start> -l 0
   --imginfo '<IMG SRC=/parnik/img/%s WIDTH=%lu HEIGHT=%lu >'
-  --width 600 --height 40 --title "Fans" 
-  --vertical-label "On/Off" 
+  --width 600 --height 40 --title "Вентилляторы" 
+  --vertical-label "Вкл/Выкл" 
   DEF:state=/var/lib/rrd/parnik/motor.rrd:fans:AVERAGE
-  AREA:state#ff0000:"Fans On"
+  AREA:state#ff0000:"Вентилляция включена"
  >
 
  <RRD::GRAPH /var/www/html/parnik/img/pump-<RRD::CV scale>.gif 
   --start -<RRD::CV start> -l 0
   --imginfo '<IMG SRC=/parnik/img/%s WIDTH=%lu HEIGHT=%lu >'
-  --width 600 --height 40 --title "Water Pump" 
-  --vertical-label "On/Off" 
+  --width 600 --height 40 --title "Насос полива" 
+  --vertical-label "Вкл/Выкл" 
   DEF:state=/var/lib/rrd/parnik/motor.rrd:pump:AVERAGE
-  AREA:state#0000ff:"Water Pump On"
+  AREA:state#0000ff:"Полив включен"
  >
 
  <RRD::GRAPH /var/www/html/parnik/img/barrel-<RRD::CV scale>.gif 
   --start -<RRD::CV start> -l 0
   --imginfo '<IMG SRC=/parnik/img/%s WIDTH=%lu HEIGHT=%lu >'
-  --width 600 --height 200 --title "Water in Barrel" 
-  --vertical-label "Liters" 
+  --width 600 --height 200 --title "Запас воды в бочке" 
+  --vertical-label "Литры" 
   DEF:vol=/var/lib/rrd/parnik/water.rrd:vol:AVERAGE
-  AREA:vol#0000ff:"Water in Barrel"
+  AREA:vol#0000ff:"Объем воды в бочке"
  >
 
  <RRD::GRAPH /var/www/html/parnik/img/power-<RRD::CV scale>.gif 
   --start -<RRD::CV start> -l 0
   --imginfo '<IMG SRC=/parnik/img/%s WIDTH=%lu HEIGHT=%lu >'
-  --width 600 --height 120 --title "Voltage" 
-  --vertical-label "Volts" 
+  --width 600 --height 120 --title "Напряжение 12В" 
+  --vertical-label "Вольт" 
   -l 10 -u 14 -r
   DEF:vol=/var/lib/rrd/parnik/power.rrd:volt:AVERAGE
-  LINE2:vol#ff0000:"Voltage +12V"
+  LINE2:vol#ff0000:"Напряжение +12В"
  >
  </div>
 </body>
