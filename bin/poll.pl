@@ -51,35 +51,32 @@ print "$status\n"	if $verb;
 die	"[$addr] Session failed: [$status]"	unless($status=~/ok/);
 
 my $ts;	# 
-my $Data;
-my @d  = localtime;
-my $mon = $d[4]+1;
-my $date = sprintf "%04d-%02d-%02d %02d:%02d:%02d", 
-                $d[5]+1900, $d[4]+1, $d[3], $d[2], $d[1], $d[0];
-my $date_d = sprintf "%04d-%02d-%02d %02d:%02d:%02d", 
-                $d[5]+1900, $d[4]+1, $d[3], 0, 0, 0;
-my $date_m = sprintf "%04d-%02d-%02d %02d:%02d:%02d", 
-                $d[5]+1900, $d[4]+1, 1, 0, 0, 0;
-my $date_y = sprintf "%04d-%02d-%02d %02d:%02d:%02d", 
-                $d[5]+1900, 1, 1, 0, 0, 0;
 
 $time = time();
 $time -= ($time % 300);
 
-		$ts = "04 01";
-		($status,$cnt,@data) = get($device,$addr,$ts);
+$ts = "04 01";
+for ($try = 0, $ok = 0; $try < 2; $try ++) {
+	($status,$cnt,@data) = get($device,$addr,$ts);
 print "Sent: $ts Received: [@data]\n" if $verb;
-		die "Error: $status" unless $status=~/ok/;
-		print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
-		$num = hex(join("",$data[2],$data[1]));
-		$temp = $num/100. - 30.;
-		$num = hex(join("",$data[4],$data[3]));
-		$temp_lo = $num/100. - 30.;
-		$num = hex(join("",$data[6],$data[5]));
-		$temp_hi = $num/100. - 30.;
-		$st="$time:$temp:U:U:U:$temp_lo:$temp_hi:U";
-		print "T=$st\n";
-		`$RRDTOOL update $RDIR/temp.rrd $st`;
+	if ($status=~/ok/) {
+		$ok = 1;
+	}
+}
+if ($ok) {
+	print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
+	$num = hex(join("",$data[2],$data[1]));
+	$temp = $num/100. - 30.;
+	$num = hex(join("",$data[4],$data[3]));
+	$temp_lo = $num/100. - 30.;
+	$num = hex(join("",$data[6],$data[5]));
+	$temp_hi = $num/100. - 30.;
+	$st="$time:$temp:U:U:U:$temp_lo:$temp_hi:U";
+} else {
+	$st="$time:U:U:U:U:U:U:U";
+}		
+print "T=$st\n";
+`$RRDTOOL update $RDIR/temp.rrd $st`;
 
 		$ts = "04 03";
 		($status,$cnt,@data) = get($device,$addr,$ts);
