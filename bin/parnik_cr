@@ -94,8 +94,8 @@ if [ -r $STATFILE ] ; then
   echo "File $STATFILE already exists!"
 else
   $RRDTOOL create "$STATFILE" --start -1d \
-                    DS:vol:GAUGE:600:0:4 \
-                    DS:dist:GAUGE:600:0:5 \
+                    DS:vol:GAUGE:600:0:300 \
+                    DS:dist:GAUGE:600:0:200 \
                     RRA:AVERAGE:0.999:1:600 \
                     RRA:AVERAGE:0.999:6:700 \
                     RRA:AVERAGE:0.999:24:775 \
