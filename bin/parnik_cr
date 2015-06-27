@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 #
-RRDTOOL=/usr/bin/rrdtool
+RRDTOOL=/usr/local/rrdtool/bin/rrdtool
 DIR=/var/lib/rrd/parnik
 
 if [ ! -d $DIR ]; then

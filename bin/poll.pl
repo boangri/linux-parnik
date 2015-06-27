@@ -2,13 +2,18 @@
 #use strict;
 $| = 1;
 
+use POSIX;
+use LWP::UserAgent;
+use HTTP::Request;
+use HTTP::Headers;
+
 use IO::File;
 use Time::Local;
 use Device::SerialPort;
 use Digest::CRC;
 
 $RDIR = "/var/lib/rrd/parnik";
-$RRDTOOL = "/usr/bin/rrdtool";
+$RRDTOOL = "/usr/local/rrdtool/bin/rrdtool";
 
 my $secs = time();
 my (@args, %opts);
@@ -71,21 +76,24 @@ if ($ok) {
 	$temp_lo = $num/100. - 30.;
 	$num = hex(join("",$data[6],$data[5]));
 	$temp_hi = $num/100. - 30.;
-	$st="$time:$temp:U:U:U:$temp_lo:$temp_hi:U";
+	$st="$temp:U:U:U:$temp_lo:$temp_hi:U";
 } else {
-	$st="$time:U:U:U:U:U:U:U";
+	$st="U:U:U:U:U:U:U";
 }		
+$params = "ts=$time&T=$st";
+
 print "T=$st\n";
-`$RRDTOOL update $RDIR/temp.rrd $st`;
+`$RRDTOOL update $RDIR/temp.rrd $time:$st`;
 
 		$ts = "04 03";
 		($status,$cnt,@data) = get($device,$addr,$ts);
 print "Sent: $ts Received: [@data]\n" if $verb;
 		die "Error: $status" unless $status=~/ok/;
 		print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
-		$st = "$time:$data[1]:$data[2]";
+		$st = "$data[1]:$data[2]";
 		print "M=$st\n";
-		`$RRDTOOL update $RDIR/motor.rrd $st`;
+		`$RRDTOOL update $RDIR/motor.rrd $time:$st`;
+$params .= "&M=$st";
 
 		$ts = "04 04";
 		($status,$cnt,@data) = get($device,$addr,$ts);
@@ -94,9 +102,10 @@ print "Sent: $ts Received: [@data]\n" if $verb;
 		print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
 		$num = hex(join("",$data[2],$data[1]));
 		$volt = $num/100. ;
-		$st = "$time:$volt:U";
+		$st = "$volt:U";
 		print "P=$st\n";
-		`$RRDTOOL update $RDIR/power.rrd $st`;
+		`$RRDTOOL update $RDIR/power.rrd $time:$st`;
+$params .= "&P=$st";
 
 		$ts = "04 05";
 		($status,$cnt,@data) = get($device,$addr,$ts);
@@ -107,9 +116,13 @@ print "Sent: $ts Received: [@data]\n" if $verb;
 		$vol = $num/100. ;
 		$num = hex(join("",$data[4],$data[3]));
 		$dist = $num/100. ;
-		$st="$time:$vol:$dist";
+		$st="$vol:$dist";
 		print "V=$st\n";
-		`$RRDTOOL update $RDIR/water.rrd $st`;
+		`$RRDTOOL update $RDIR/water.rrd $time:$st`;
+$params .= "&V=$st";
+print "$RRDTOOL update $RDIR/water.rrd $time:$st\n";
+
+&http_get($params);
 
 exit;
 		my @d1;
@@ -330,4 +343,41 @@ sub decimal43 {	# 4 трехбайтных числа в строке
 		push @a, (($num == 4194303)?'null':$num/100);
 	}
 	return @a;
+}
+
+##################################################
+# Transfer to Web
+#
+
+sub http_get {
+	my ($params) = @_;
+	my $url = "http://www.xland.ru/cgi-bin/parnik_upd";
+        my $response = &post_url($url, $params);
+print "URL=$url\n";
+print "params = $params\n";
+print "Response=$response\n";
+        return "ok" if $response=~/success/;
+        return "fail";
+}
+
+#----------
+# post_url : Use http to post the url
+#----------
+sub  post_url ($) {
+
+  my ($url, $ua, $h, $req, $resp, $resp_data, $data);
+
+  ($url, $data) = @_;
+
+# Comment out the fields below for testing, and uncomment the print statement
+  $ua = LWP::UserAgent->new;
+  $h = HTTP::Headers->new;
+  $h->header('Content-Type' => 'text/plain');  # set
+  $req = HTTP::Request->new(GET => $url."?".$data, $h);
+  $resp = $ua->simple_request($req);
+  $resp_data = $resp->content;
+
+# For troubleshooting:
+#  print "$url\n";
+  return $resp_data;
 }
