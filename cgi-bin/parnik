@@ -12,22 +12,23 @@
 <body>
  <h2>Парник</h2>
  <div class="container">
- <RRD::GRAPH /var/www/html/parnik/img/temp-<RRD::CV scale>.gif 
+ <RRD::GRAPH /var/www/parnik/img/temp-<RRD::CV scale>.gif 
   --start -<RRD::CV start> -l 0
   --imginfo '<IMG SRC=/parnik/img/%s WIDTH=%lu HEIGHT=%lu >'
   --width 600 --height 400 --title "Температуры" 
   --vertical-label "Градусы" 
   DEF:temp1=/var/lib/rrd/parnik/temp.rrd:temp1:AVERAGE
-  DEF:temp2=/var/lib/rrd/1-wire/home/weather.rrd:temp:AVERAGE
   DEF:high=/var/lib/rrd/parnik/temp.rrd:high:AVERAGE
   DEF:low=/var/lib/rrd/parnik/temp.rrd:low:AVERAGE
   LINE2:temp1#FF0000:"Темпрература воздуха внутри"
-  LINE2:temp2#009000:"Температура снаружи"
   LINE1:high#FF0000:"Порог включения вентиляторов"
   LINE1:low#0000FF:"Порог выключения"
  >
-
- <RRD::GRAPH /var/www/html/parnik/img/fans-<RRD::CV scale>.gif 
+<!--
+  DEF:temp2=/var/lib/rrd/1-wire/home/weather.rrd:temp:AVERAGE
+  LINE2:temp2#009000:"Температура снаружи"
+-->
+ <RRD::GRAPH /var/www/parnik/img/fans-<RRD::CV scale>.gif 
   --start -<RRD::CV start> -l 0
   --imginfo '<IMG SRC=/parnik/img/%s WIDTH=%lu HEIGHT=%lu >'
   --width 600 --height 40 --title "Вентилляторы" 
@@ -36,7 +37,7 @@
   AREA:state#ff0000:"Вентилляция включена"
  >
 
- <RRD::GRAPH /var/www/html/parnik/img/pump-<RRD::CV scale>.gif 
+ <RRD::GRAPH /var/www/parnik/img/pump-<RRD::CV scale>.gif 
   --start -<RRD::CV start> -l 0
   --imginfo '<IMG SRC=/parnik/img/%s WIDTH=%lu HEIGHT=%lu >'
   --width 600 --height 40 --title "Насос полива" 
@@ -45,7 +46,7 @@
   AREA:state#0000ff:"Полив включен"
  >
 
- <RRD::GRAPH /var/www/html/parnik/img/barrel-<RRD::CV scale>.gif 
+ <RRD::GRAPH /var/www/parnik/img/barrel-<RRD::CV scale>.gif 
   --start -<RRD::CV start> -l 0
   --imginfo '<IMG SRC=/parnik/img/%s WIDTH=%lu HEIGHT=%lu >'
   --width 600 --height 200 --title "Запас воды в бочке" 
@@ -54,7 +55,7 @@
   AREA:vol#0000ff:"Объем воды в бочке"
  >
 
- <RRD::GRAPH /var/www/html/parnik/img/power-<RRD::CV scale>.gif 
+ <RRD::GRAPH /var/www/parnik/img/power-<RRD::CV scale>.gif 
   --start -<RRD::CV start> -l 0
   --imginfo '<IMG SRC=/parnik/img/%s WIDTH=%lu HEIGHT=%lu >'
   --width 600 --height 120 --title "Напряжение 12В" 
