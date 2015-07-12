@@ -76,7 +76,9 @@ if ($ok) {
 	$temp_lo = $num/100. - 30.;
 	$num = hex(join("",$data[6],$data[5]));
 	$temp_hi = $num/100. - 30.;
-	$st="$temp:U:U:U:$temp_lo:$temp_hi:U";
+	$num = hex(join("",$data[8],$data[7]));
+	$temp_pump = $num/100. - 30.;
+	$st="$temp:U:U:U:$temp_lo:$temp_hi:$temp_pump";
 } else {
 	$st="U:U:U:U:U:U:U";
 }		
