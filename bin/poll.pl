@@ -12,6 +12,12 @@ use Time::Local;
 use Device::SerialPort;
 use Digest::CRC;
 
+use DBI;
+$db = 'parnik';
+$host = 'localhst';
+$db_user = 'parnik';
+$db_pass = 'parnik';
+
 $RDIR = "/var/lib/rrd/parnik";
 $RRDTOOL = "/usr/local/rrdtool/bin/rrdtool";
 
@@ -43,6 +49,10 @@ my $MAXLENGTH = 255;	#
 my $port=Device::SerialPort->new("$device");
 my ($status,$cnt,@data);
 
+$dbh = DBI->connect("DBI:mysql:$db:$db_host:3306",$db_user,$db_pass);
+if ( $DBI::errstr ne "" ) {
+        die "Could not connect to MySQL, Error: $DBI::errstr\n";
+}
 if($verb) {
 	print "Connection testing ... "	if $verb;
 	$status = tst($device,$port,$addr);
@@ -74,11 +84,11 @@ for ($try = 0; $try < 3; $try++) {
 		$num = hex(join("",$data[4],$data[3]));
 		$temp2 = $num/100. - 30.;
 		$num = hex(join("",$data[6],$data[5]));
-		$temp_hi = $num/100. - 30.;
-		$temp_lo = $temp_hi - 1;
+		$temp_fans = $num/100. - 30.;
+		$temp_lo = $temp_fans - 1;
 		$num = hex(join("",$data[8],$data[7]));
 		$temp_pump = $num/100. - 30.;
-		$st="$temp1:$temp2:U:U:$temp_lo:$temp_hi:$temp_pump";
+		$st="$temp1:$temp2:U:U:$temp_lo:$temp_fans:$temp_pump";
 		last;
 	}
 }		
@@ -95,6 +105,8 @@ for ($try = 0; $try < 3; $try++) {
 	print "Sent: $ts Received: [@data]\n" if $verb;
 	if ($status=~/ok/) {
 		print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
+		$fans = $data[1];
+		$pump = $data[2];
 		$st = "$data[1]:$data[2]";
 		last;
 	}
@@ -142,6 +154,14 @@ for ($try = 0; $try < 3; $try++) {
 print "V=$st\n" if $verb;
 `$RRDTOOL update $RDIR/water.rrd $time:$st`;
 $params .= "&V=$st";
+
+$sql = "INSERT INTO parnik(ts, temp1, temp2, temp_fans, temp_pump, volt, vol, dist, fans, pump, sent) 
+	VALUES ($time, $temp1, $temp2, $temp_fans, $temp_pump, $volt, $vol, $dist, $fans, $pump, 0)";
+$sth = $dbh->prepare($sql);
+$rv = $sth->execute;
+print "$sql\n";
+print "INSERTED: $rv rows\n";
+$sth->finish;
 
 &http_get($params);
 
