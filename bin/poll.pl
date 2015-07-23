@@ -21,7 +21,7 @@ foreach(@ARGV){
    if(/^\-(\S)(.*)/){	$opts{$1} = $2;	} else {	push @args, $_;	}
 }
 my $verb = exists $opts{v};
-my $retries = (exists $opts{r}) ? $opts{r} : 2;
+my $retries = (exists $opts{r}) ? $opts{r} : 3;
 my $showhead = exists $opts{s};	# 
 my ($saddr, $device, $passwd, $level) = (@args);
 die "Usage: $0 addr serial-dev [passwd [level]]"	unless(defined $saddr && $device);
@@ -37,7 +37,7 @@ $passwd=sprintf("%x %x %x %x %x %x", split("",$passwd,6));
 print "Addr: [$addr] Pw: [$passwd]\n"	if $verb;
 my $to_errors = 0;
 my $crc_errors = 0;
-my $STALL_DEFAULT=2; # how many seconds to wait for new input
+my $STALL_DEFAULT=4; # how many seconds to wait for new input
 my $MAXLENGTH = 255;	# 
 
 my $port=Device::SerialPort->new("$device");
@@ -61,14 +61,9 @@ $time = time();
 $time -= ($time % 300);
 
 $ts = "04 01";
-for ($try = 0, $ok = 0; $try < 2; $try ++) {
-	($status,$cnt,@data) = get($device,$addr,$ts);
+($status,$cnt,@data) = get($device,$addr,$ts);
 print "Sent: $ts Received: [@data]\n" if $verb;
-	if ($status=~/ok/) {
-		$ok = 1;
-	}
-}
-if ($ok) {
+if ($status=~/ok/) {
 	print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
 	$num = hex(join("",$data[2],$data[1]));
 	$temp1 = $num/100. - 30.;
@@ -85,80 +80,57 @@ if ($ok) {
 }		
 $params = "ts=$time&T=$st";
 
-print "T=$st\n";
+print "T=$st\n" if $verb;
 `$RRDTOOL update $RDIR/temp.rrd $time:$st`;
 
-		$ts = "04 03";
-		($status,$cnt,@data) = get($device,$addr,$ts);
+$ts = "04 03";
+($status,$cnt,@data) = get($device,$addr,$ts);
 print "Sent: $ts Received: [@data]\n" if $verb;
-		die "Error: $status" unless $status=~/ok/;
-		print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
-		$st = "$data[1]:$data[2]";
-		print "M=$st\n";
-		`$RRDTOOL update $RDIR/motor.rrd $time:$st`;
+if ($status=~/ok/) {
+	print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
+	$st = "$data[1]:$data[2]";
+} else {
+	$st = "U:U";
+}
+print "M=$st\n" if $verb;
+`$RRDTOOL update $RDIR/motor.rrd $time:$st`;
 $params .= "&M=$st";
 
-		$ts = "04 04";
-		($status,$cnt,@data) = get($device,$addr,$ts);
+$ts = "04 04";
+($status,$cnt,@data) = get($device,$addr,$ts);
 print "Sent: $ts Received: [@data]\n" if $verb;
-		die "Error: $status" unless $status=~/ok/;
-		print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
-		$num = hex(join("",$data[2],$data[1]));
-		$volt = $num/100. ;
-		$st = "$volt:U";
-		print "P=$st\n";
-		`$RRDTOOL update $RDIR/power.rrd $time:$st`;
+if ($status=~/ok/) {
+	print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
+	$num = hex(join("",$data[2],$data[1]));
+	$volt = $num/100. ;
+	$st = "$volt:U";
+} else {
+	$st = "U:U";
+}
+	print "P=$st\n" if $verb;
+`$RRDTOOL update $RDIR/power.rrd $time:$st`;
 $params .= "&P=$st";
 
-		$ts = "04 05";
-		($status,$cnt,@data) = get($device,$addr,$ts);
+$ts = "04 05";
+($status,$cnt,@data) = get($device,$addr,$ts);
 print "Sent: $ts Received: [@data]\n" if $verb;
-		die "Error: $status" unless $status=~/ok/;
-		print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
-		$num = hex(join("",$data[2],$data[1]));
-		$vol = $num/100. ;
-		$num = hex(join("",$data[4],$data[3]));
-		$dist = $num/100. ;
-		$st="$vol:$dist";
-		print "V=$st\n";
-		`$RRDTOOL update $RDIR/water.rrd $time:$st`;
+if ($status=~/ok/) {
+	print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
+	$num = hex(join("",$data[2],$data[1]));
+	$vol = $num/100. ;
+	$num = hex(join("",$data[4],$data[3]));
+	$dist = $num/100. ;
+	$st="$vol:$dist";
+} else {
+	$st = "U:U";
+}
+print "V=$st\n" if $verb;
+`$RRDTOOL update $RDIR/water.rrd $time:$st`;
 $params .= "&V=$st";
-print "$RRDTOOL update $RDIR/water.rrd $time:$st\n";
 
 &http_get($params);
 
 exit;
-		my @d1;
-		$d1[0] = $data[1];	
-		$d1[1] = $data[2];	
-		$d1[2] = $data[3];	
-		$d1[3] = $data[5];	
-		$d1[4] = $data[6] - 1;	
-		$d1[5] = $data[7] + 100;	
-
-my $date1 = sprintf "%04d-%02d-%02d %02d:%02d:%02d", 
-                $d1[5]+1900, $d1[4]+1, $d1[3], $d1[2], $d1[1], $d1[0];
-printf "$date $date1\n";
-my $t1 = timelocal(@d1);
-my $t = timelocal(@d);
-printf "$t $t1 %d\n", $t - $t1;
-
-
-#
-#       Correct time
-#
-	@d  = localtime;
-        $ts = sprintf ("03 0D %02d %02d %02d", $d[0], $d[1], $d[2]);
-        ($status,$cnt,@data) = get($device,$addr,$ts);
-my $res = $data[1]+0;
-print "Sent: $ts Received: [@data] Result: $res\n" ;
-        die "Error: $status" unless $status=~/ok/;
-        print "[$status][$cnt][".join(' ',@data)."]\n" ;
-########################################################
-print "Session closing ... "	if $verb;
-$status = sclose($device,$port,$addr);
-#print "$status\n"	if $verb;
-	exit $res;
 
 ###################### subs
 # проверка связи
