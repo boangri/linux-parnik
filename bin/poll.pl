@@ -59,70 +59,85 @@ my $ts;	#
 
 $time = time();
 $time -= ($time % 300);
-
+#
+# Temperatures
+#
 $ts = "04 01";
+$st="U:U:U:U:U:U:U";
+for ($try = 0; $try < 3; $try++) {
 ($status,$cnt,@data) = get($device,$addr,$ts);
-print "Sent: $ts Received: [@data]\n" if $verb;
-if ($status=~/ok/) {
-	print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
-	$num = hex(join("",$data[2],$data[1]));
-	$temp1 = $num/100. - 30.;
-	$num = hex(join("",$data[4],$data[3]));
-	$temp2 = $num/100. - 30.;
-	$num = hex(join("",$data[6],$data[5]));
-	$temp_hi = $num/100. - 30.;
-	$temp_lo = $temp_hi - 1;
-	$num = hex(join("",$data[8],$data[7]));
-	$temp_pump = $num/100. - 30.;
-	$st="$temp1:$temp2:U:U:$temp_lo:$temp_hi:$temp_pump";
-} else {
-	$st="U:U:U:U:U:U:U";
+	print "Sent: $ts Received: [@data]\n" if $verb;
+	if ($status=~/ok/) {
+		print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
+		$num = hex(join("",$data[2],$data[1]));
+		$temp1 = $num/100. - 30.;
+		$num = hex(join("",$data[4],$data[3]));
+		$temp2 = $num/100. - 30.;
+		$num = hex(join("",$data[6],$data[5]));
+		$temp_hi = $num/100. - 30.;
+		$temp_lo = $temp_hi - 1;
+		$num = hex(join("",$data[8],$data[7]));
+		$temp_pump = $num/100. - 30.;
+		$st="$temp1:$temp2:U:U:$temp_lo:$temp_hi:$temp_pump";
+		last;
+	}
 }		
 $params = "ts=$time&T=$st";
-
 print "T=$st\n" if $verb;
 `$RRDTOOL update $RDIR/temp.rrd $time:$st`;
-
+#
+# Fans and pump status
+#
 $ts = "04 03";
-($status,$cnt,@data) = get($device,$addr,$ts);
-print "Sent: $ts Received: [@data]\n" if $verb;
-if ($status=~/ok/) {
-	print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
-	$st = "$data[1]:$data[2]";
-} else {
-	$st = "U:U";
+$st = "U:U";
+for ($try = 0; $try < 3; $try++) {
+	($status,$cnt,@data) = get($device,$addr,$ts);
+	print "Sent: $ts Received: [@data]\n" if $verb;
+	if ($status=~/ok/) {
+		print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
+		$st = "$data[1]:$data[2]";
+		last;
+	}
 }
 print "M=$st\n" if $verb;
 `$RRDTOOL update $RDIR/motor.rrd $time:$st`;
 $params .= "&M=$st";
-
+#
+# voltage and current
+#
 $ts = "04 04";
-($status,$cnt,@data) = get($device,$addr,$ts);
-print "Sent: $ts Received: [@data]\n" if $verb;
-if ($status=~/ok/) {
-	print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
-	$num = hex(join("",$data[2],$data[1]));
-	$volt = $num/100. ;
-	$st = "$volt:U";
-} else {
-	$st = "U:U";
+$st = "U:U";
+for ($try = 0; $try < 3; $try++) {
+	($status,$cnt,@data) = get($device,$addr,$ts);
+	print "Sent: $ts Received: [@data]\n" if $verb;
+	if ($status=~/ok/) {
+		print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
+		$num = hex(join("",$data[2],$data[1]));
+		$volt = $num/100. ;
+		$st = "$volt:U";
+		last;
+	}
 }
-	print "P=$st\n" if $verb;
+print "P=$st\n" if $verb;
 `$RRDTOOL update $RDIR/power.rrd $time:$st`;
 $params .= "&P=$st";
-
+#
+# volume of water and distance to surface
+#
 $ts = "04 05";
-($status,$cnt,@data) = get($device,$addr,$ts);
-print "Sent: $ts Received: [@data]\n" if $verb;
-if ($status=~/ok/) {
-	print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
-	$num = hex(join("",$data[2],$data[1]));
-	$vol = $num/100. ;
-	$num = hex(join("",$data[4],$data[3]));
-	$dist = $num/100. ;
-	$st="$vol:$dist";
-} else {
-	$st = "U:U";
+$st = "U:U";
+for ($try = 0; $try < 3; $try++) {
+	($status,$cnt,@data) = get($device,$addr,$ts);
+	print "Sent: $ts Received: [@data]\n" if $verb;
+	if ($status=~/ok/) {
+		print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
+		$num = hex(join("",$data[2],$data[1]));
+		$vol = $num/100. ;
+		$num = hex(join("",$data[4],$data[3]));
+		$dist = $num/100. ;
+		$st="$vol:$dist";
+		last;
+	}	
 }
 print "V=$st\n" if $verb;
 `$RRDTOOL update $RDIR/water.rrd $time:$st`;
