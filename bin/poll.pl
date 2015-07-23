@@ -14,7 +14,7 @@ use Digest::CRC;
 
 use DBI;
 $db = 'parnik';
-$host = 'localhst';
+$db_host = 'localhost';
 $db_user = 'parnik';
 $db_pass = 'parnik';
 
@@ -163,8 +163,34 @@ print "$sql\n";
 print "INSERTED: $rv rows\n";
 $sth->finish;
 
-&http_get($params);
-
+$sql = "SELECT ts, temp1, temp2, temp3, temp_fans, temp_pump, volt, vol, dist, fans, pump FROM parnik 
+WHERE sent = 0 ORDER BY ts LIMIT 10";
+$sth = $dbh->prepare($sql);
+$rv = $sth->execute;
+$sth->bind_columns( {}, \($time, $temp1, $temp2, $temp3, $temp_fans, $temp_pump, $volt, $vol, $dist, $fans, $pump));
+while($sth->fetch) {
+	$temp1 = 'U' unless defined $temp1;
+	$temp2 = 'U' unless defined $temp2;
+	$temp3 = 'U' unless defined $temp3;
+	$temp_lo = defined $temp_fans ? $temp_fans -1 : 'U';
+	$temp_fans = 'U' unless defined $temp_fans;
+	$temp_pump = 'U' unless defined $temp_pump;
+	$volt = 'U' unless defined $volt;
+	$vol = 'U' unless defined $vol;
+	$dist = 'U' unless defined $dist;
+	$fans = 'U' unless defined $fans;
+	$pump = 'U' unless defined $pump;
+# ts=1437666600&T=25.06:24.5:U:U:26:27:23&M=00:00&P=12.75:U&V=154.03:13.6	
+	$params = "ts=$time&T=$temp1:$temp2:$temp3:U:$temp_lo:$temp_fans:$temp_pump&M=$fans:$pump&P=$volt:U&V=$vol:$dist";
+print "$params\n";
+	$res = &http_get($params);
+	if ($res =~ /ok/) {
+		$sql2 = "UPDATE parnik SET sent = 1 WHERE ts = $time";
+		$sth2 = $dbh->prepare($sql2);
+		$rv2 = $sth2->execute;
+		print "Updated $rv2 rows\n";
+	}
+}
 exit;
 
 ###################### subs
