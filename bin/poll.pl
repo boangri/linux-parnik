@@ -71,14 +71,15 @@ print "Sent: $ts Received: [@data]\n" if $verb;
 if ($ok) {
 	print "[$status][$cnt][".join(' ',@data)."]\n" if $verb;
 	$num = hex(join("",$data[2],$data[1]));
-	$temp = $num/100. - 30.;
+	$temp1 = $num/100. - 30.;
 	$num = hex(join("",$data[4],$data[3]));
-	$temp_lo = $num/100. - 30.;
+	$temp2 = $num/100. - 30.;
 	$num = hex(join("",$data[6],$data[5]));
 	$temp_hi = $num/100. - 30.;
+	$temp_lo = $temp_hi - 1;
 	$num = hex(join("",$data[8],$data[7]));
 	$temp_pump = $num/100. - 30.;
-	$st="$temp:U:U:U:$temp_lo:$temp_hi:$temp_pump";
+	$st="$temp1:$temp2:U:U:$temp_lo:$temp_hi:$temp_pump";
 } else {
 	$st="U:U:U:U:U:U:U";
 }		
